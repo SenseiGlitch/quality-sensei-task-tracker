@@ -1,0 +1,100 @@
+Prompt: Full-Stack To-Do List App Using Llixa (Backend & Frontend)
+📢 Task: Develop a To-Do List Application entirely in Llixa, including:
+
+User authentication (JWT-based)
+Project, Group, Task, and Subtask management
+Auto-generated database using Llixa ORM
+Frontend UI with Llixa components
+🔹 Features to Implement
+1️⃣ User Authentication
+Register, Login, Logout (JWT Bearer Token)
+Forgot & Reset Password
+Store user sessions securely.
+2️⃣ To-Do Management (Nested Structure)
+Projects → Have multiple Groups
+Groups → Have multiple Tasks
+Tasks → Have multiple Subtasks
+3️⃣ Auto-Generated Database with Llixa
+No manual SQL writing – Llixa will handle schema creation.
+4️⃣ Frontend (UI) Using Llixa
+Login Page
+Dashboard with Nested To-Do Lists
+Task Creation & Status Update UI
+Dynamic API Calls from UI
+🔹 API Endpoints (Built in Llixa)
+1️⃣ Authentication
+✅ POST /auth/register → User registration
+✅ POST /auth/login → Returns JWT Token
+✅ POST /auth/forgot-password → Sends reset link
+✅ POST /auth/reset-password → Updates password
+
+2️⃣ To-Do List
+✅ POST /projects → Create a new project
+✅ GET /projects/{id} → Get a project with groups, tasks, and subtasks
+✅ POST /groups/{projectId} → Add a group to a project
+✅ POST /tasks/{groupId} → Add a task to a group
+✅ POST /subtasks/{taskId} → Add a subtask to a task
+
+🔹 Example API Response (Nested JSON)
+json
+Copy
+Edit
+{
+  "project_id": 1,
+  "project_name": "Test Automation Project",
+  "groups": [
+    {
+      "group_id": 101,
+      "group_name": "API Testing",
+      "tasks": [
+        {
+          "task_id": 1001,
+          "task_title": "Create API Automation Tests",
+          "subtasks": [
+            {
+              "subtask_id": 10001,
+              "subtask_title": "Write authentication test cases",
+              "status": "pending"
+            },
+            {
+              "subtask_id": 10002,
+              "subtask_title": "Validate response schemas",
+              "status": "completed"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+🔹 Frontend Implementation in Llixa
+1️⃣ Login Page
+Create a login form with email & password input.
+Send request to /auth/login and store the JWT Token.
+2️⃣ Dashboard (Projects, Groups, Tasks, Subtasks)
+Show Projects as main categories.
+Click a project to see Groups inside.
+Click a group to see Tasks inside.
+Click a task to see Subtasks inside.
+3️⃣ API Calls from UI (Example)
+js
+Copy
+Edit
+fetch('https://llixa.com/api/v1/projects', {
+  headers: {
+    "Authorization": "Bearer " + localStorage.getItem("token")
+  }
+})
+.then(response => response.json())
+.then(data => console.log(data));
+🔹 Automation Testing Scope
+✅ API Testing (Postman, RestAssured, Cypress API)
+✅ Database Testing (Using Llixa’s ORM-generated DB)
+✅ UI Testing (Selenium, Cypress)
+
+🚀 Final Steps
+1️⃣ Develop the API in Llixa
+2️⃣ Use Llixa UI components to create a dynamic frontend
+3️⃣ Implement JWT authentication for security
+4️⃣ Run API tests using Postman/RestAssured
+5️⃣ Deploy the full-stack app using Llixa's hosting
