@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import swaggerUi from "swagger-ui-express";
 import { swaggerDocument } from "./swagger";
+import { setupDatabaseCleanup } from "./db-cleanup";
 
 const app = express();
 app.use(express.json());
@@ -51,6 +52,14 @@ app.use((req, res, next) => {
     res.status(status).json({ message });
     throw err;
   });
+
+  // Set up the database cleanup service
+  try {
+    await setupDatabaseCleanup();
+    log('Database cleanup service initialized successfully');
+  } catch (error) {
+    log('Failed to initialize database cleanup service:', error instanceof Error ? error.message : 'Unknown error');
+  }
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
