@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertProjectSchema, insertGroupSchema, insertTaskSchema, insertSubtaskSchema, ProjectWithChildren } from "@shared/schema";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, ChevronDown, Plus, LogOut } from "lucide-react";
+import { Loader2, PlusCircle, LogOut, CheckCircle } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
@@ -17,7 +17,7 @@ import { useState } from "react";
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
-  
+
   const { data: projects, isLoading } = useQuery<ProjectWithChildren[]>({
     queryKey: ["/api/projects"],
   });
@@ -112,10 +112,10 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
+      <header className="border-b border-border/40 bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            TodoNest
+            Quality Sensei
           </h1>
           <div className="flex items-center gap-4">
             <span className="text-muted-foreground">Welcome, {user?.username}</span>
@@ -128,15 +128,18 @@ export default function HomePage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
+        <div className="grid grid-cols-1 gap-6">
+          <Card className="bg-card/50 backdrop-blur-sm border-primary/10">
             <CardHeader>
-              <CardTitle>Projects</CardTitle>
-              <CardDescription>Create and manage your projects</CardDescription>
+              <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-primary" />
+                Projects
+              </CardTitle>
+              <CardDescription>Manage your tasks and projects</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...projectForm}>
-                <form 
+                <form
                   onSubmit={projectForm.handleSubmit((data) => createProjectMutation.mutate(data))}
                   className="flex gap-2 mb-4"
                 >
@@ -146,14 +149,18 @@ export default function HomePage() {
                     render={({ field }) => (
                       <FormItem className="flex-1">
                         <FormControl>
-                          <Input placeholder="New project name" {...field} />
+                          <Input placeholder="New project name" className="bg-background" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <Button type="submit" size="icon" disabled={createProjectMutation.isPending}>
-                    <Plus className="h-4 w-4" />
+                    {createProjectMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <PlusCircle className="h-4 w-4" />
+                    )}
                   </Button>
                 </form>
               </Form>
@@ -167,11 +174,11 @@ export default function HomePage() {
                   onValueChange={(value) => setSelectedProject(value ? parseInt(value) : null)}
                 >
                   {projects?.map((project) => (
-                    <AccordionItem key={project.id} value={project.id.toString()}>
-                      <AccordionTrigger className="hover:bg-primary/5 px-4 rounded-lg">
+                    <AccordionItem key={project.id} value={project.id.toString()} className="border border-border/40 rounded-lg overflow-hidden">
+                      <AccordionTrigger className="hover:bg-primary/5 px-4">
                         {project.name}
                       </AccordionTrigger>
-                      <AccordionContent className="px-4">
+                      <AccordionContent className="px-4 pt-2 pb-4">
                         <Form {...groupForm}>
                           <form
                             onSubmit={groupForm.handleSubmit((data) =>
@@ -185,22 +192,28 @@ export default function HomePage() {
                               render={({ field }) => (
                                 <FormItem className="flex-1">
                                   <FormControl>
-                                    <Input placeholder="New group name" {...field} />
+                                    <Input placeholder="New group name" className="bg-background" {...field} />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
                               )}
                             />
                             <Button type="submit" size="icon" disabled={createGroupMutation.isPending}>
-                              <Plus className="h-4 w-4" />
+                              {createGroupMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <PlusCircle className="h-4 w-4" />
+                              )}
                             </Button>
                           </form>
                         </Form>
 
                         {project.groups.map((group) => (
-                          <div key={group.id} className="mb-4">
-                            <h3 className="font-medium mb-2">{group.name}</h3>
-                            
+                          <div key={group.id} className="mb-6 last:mb-0">
+                            <h3 className="font-medium text-sm text-muted-foreground mb-2">
+                              {group.name}
+                            </h3>
+
                             <Form {...taskForm}>
                               <form
                                 onSubmit={taskForm.handleSubmit((data) =>
@@ -214,14 +227,18 @@ export default function HomePage() {
                                   render={({ field }) => (
                                     <FormItem className="flex-1">
                                       <FormControl>
-                                        <Input placeholder="New task title" {...field} />
+                                        <Input placeholder="New task title" className="bg-background" {...field} />
                                       </FormControl>
                                       <FormMessage />
                                     </FormItem>
                                   )}
                                 />
                                 <Button type="submit" size="icon" disabled={createTaskMutation.isPending}>
-                                  <Plus className="h-4 w-4" />
+                                  {createTaskMutation.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <PlusCircle className="h-4 w-4" />
+                                  )}
                                 </Button>
                               </form>
                             </Form>
@@ -257,18 +274,18 @@ export default function HomePage() {
                                         render={({ field }) => (
                                           <FormItem className="flex-1">
                                             <FormControl>
-                                              <Input placeholder="New subtask title" {...field} />
+                                              <Input placeholder="New subtask title" className="bg-background" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                           </FormItem>
                                         )}
                                       />
-                                      <Button
-                                        type="submit"
-                                        size="icon"
-                                        disabled={createSubtaskMutation.isPending}
-                                      >
-                                        <Plus className="h-4 w-4" />
+                                      <Button type="submit" size="icon" disabled={createSubtaskMutation.isPending}>
+                                        {createSubtaskMutation.isPending ? (
+                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                          <PlusCircle className="h-4 w-4" />
+                                        )}
                                       </Button>
                                     </form>
                                   </Form>
@@ -284,11 +301,7 @@ export default function HomePage() {
                                           })
                                         }
                                       />
-                                      <span
-                                        className={
-                                          subtask.completed ? "line-through text-muted-foreground" : ""
-                                        }
-                                      >
+                                      <span className={subtask.completed ? "line-through text-muted-foreground" : ""}>
                                         {subtask.title}
                                       </span>
                                     </div>

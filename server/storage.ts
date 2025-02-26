@@ -8,10 +8,13 @@ import type {
   Subtask,
   ProjectWithChildren
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import session from "express-session";
-import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 
-const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   // User operations
@@ -39,156 +42,151 @@ export interface IStorage {
   updateSubtask(id: number, data: Partial<Subtask>): Promise<Subtask>;
 
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private projects: Map<number, Project>;
-  private groups: Map<number, Group>;
-  private tasks: Map<number, Task>;
-  private subtasks: Map<number, Subtask>;
-  sessionStore: session.SessionStore;
-
-  private userIdCounter: number = 1;
-  private projectIdCounter: number = 1;
-  private groupIdCounter: number = 1;
-  private taskIdCounter: number = 1;
-  private subtaskIdCounter: number = 1;
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
 
   constructor() {
-    this.users = new Map();
-    this.projects = new Map();
-    this.groups = new Map();
-    this.tasks = new Map();
-    this.subtasks = new Map();
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000, // Prune expired entries every 24h
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
     });
   }
 
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userIdCounter++;
-    const user = { id, ...insertUser };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   // Project operations
   async createProject(data: Omit<typeof projects.$inferInsert, "id">): Promise<Project> {
-    const id = this.projectIdCounter++;
-    const project = { id, ...data };
-    this.projects.set(id, project);
+    const [project] = await db.insert(projects).values(data).returning();
     return project;
   }
 
   async getProject(id: number): Promise<Project | undefined> {
-    return this.projects.get(id);
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project;
   }
 
   async getProjectsWithChildren(userId: number): Promise<ProjectWithChildren[]> {
-    const userProjects = Array.from(this.projects.values()).filter(
-      (project) => project.userId === userId
-    );
+    // Get all projects for the user
+    const userProjects = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.userId, userId));
 
-    return userProjects.map((project) => {
-      const projectGroups = Array.from(this.groups.values()).filter(
-        (group) => group.projectId === project.id
-      );
+    const result: ProjectWithChildren[] = [];
 
-      const groupsWithTasks = projectGroups.map((group) => {
-        const groupTasks = Array.from(this.tasks.values()).filter(
-          (task) => task.groupId === group.id
-        );
+    for (const project of userProjects) {
+      // Get all groups for this project
+      const projectGroups = await db
+        .select()
+        .from(groups)
+        .where(eq(groups.projectId, project.id));
 
-        const tasksWithSubtasks = groupTasks.map((task) => {
-          const taskSubtasks = Array.from(this.subtasks.values()).filter(
-            (subtask) => subtask.taskId === task.id
+      const groupsWithTasks = await Promise.all(
+        projectGroups.map(async (group) => {
+          // Get all tasks for this group
+          const groupTasks = await db
+            .select()
+            .from(tasks)
+            .where(eq(tasks.groupId, group.id));
+
+          const tasksWithSubtasks = await Promise.all(
+            groupTasks.map(async (task) => {
+              // Get all subtasks for this task
+              const taskSubtasks = await db
+                .select()
+                .from(subtasks)
+                .where(eq(subtasks.taskId, task.id));
+
+              return {
+                ...task,
+                subtasks: taskSubtasks,
+              };
+            })
           );
 
           return {
-            ...task,
-            subtasks: taskSubtasks,
+            ...group,
+            tasks: tasksWithSubtasks,
           };
-        });
+        })
+      );
 
-        return {
-          ...group,
-          tasks: tasksWithSubtasks,
-        };
-      });
-
-      return {
+      result.push({
         ...project,
         groups: groupsWithTasks,
-      };
-    });
+      });
+    }
+
+    return result;
   }
 
   // Group operations
   async createGroup(data: Omit<typeof groups.$inferInsert, "id">): Promise<Group> {
-    const id = this.groupIdCounter++;
-    const group = { id, ...data };
-    this.groups.set(id, group);
+    const [group] = await db.insert(groups).values(data).returning();
     return group;
   }
 
   async getGroup(id: number): Promise<Group | undefined> {
-    return this.groups.get(id);
+    const [group] = await db.select().from(groups).where(eq(groups.id, id));
+    return group;
   }
 
   // Task operations
   async createTask(data: Omit<typeof tasks.$inferInsert, "id">): Promise<Task> {
-    const id = this.taskIdCounter++;
-    const task = { id, ...data };
-    this.tasks.set(id, task);
+    const [task] = await db.insert(tasks).values(data).returning();
     return task;
   }
 
   async getTask(id: number): Promise<Task | undefined> {
-    return this.tasks.get(id);
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task;
   }
 
   async updateTask(id: number, data: Partial<Task>): Promise<Task> {
-    const task = this.tasks.get(id);
-    if (!task) throw new Error("Task not found");
-    
-    const updatedTask = { ...task, ...data };
-    this.tasks.set(id, updatedTask);
-    return updatedTask;
+    const [task] = await db
+      .update(tasks)
+      .set(data)
+      .where(eq(tasks.id, id))
+      .returning();
+    return task;
   }
 
   // Subtask operations
   async createSubtask(data: Omit<typeof subtasks.$inferInsert, "id">): Promise<Subtask> {
-    const id = this.subtaskIdCounter++;
-    const subtask = { id, ...data };
-    this.subtasks.set(id, subtask);
+    const [subtask] = await db.insert(subtasks).values(data).returning();
     return subtask;
   }
 
   async getSubtask(id: number): Promise<Subtask | undefined> {
-    return this.subtasks.get(id);
+    const [subtask] = await db.select().from(subtasks).where(eq(subtasks.id, id));
+    return subtask;
   }
 
   async updateSubtask(id: number, data: Partial<Subtask>): Promise<Subtask> {
-    const subtask = this.subtasks.get(id);
-    if (!subtask) throw new Error("Subtask not found");
-    
-    const updatedSubtask = { ...subtask, ...data };
-    this.subtasks.set(id, updatedSubtask);
-    return updatedSubtask;
+    const [subtask] = await db
+      .update(subtasks)
+      .set(data)
+      .where(eq(subtasks.id, id))
+      .returning();
+    return subtask;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

@@ -8,11 +8,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema, InsertUser } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle } from "lucide-react";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
-  
+
   const loginForm = useForm<InsertUser>({
     resolver: zodResolver(insertUserSchema),
   });
@@ -26,19 +26,19 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
+    <div className="min-h-screen bg-background grid grid-cols-1 md:grid-cols-2">
       <div className="flex items-center justify-center p-6">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md bg-card/50 backdrop-blur-sm border-primary/10">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Welcome to TodoNest
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Quality Sensei
             </CardTitle>
-            <CardDescription>
-              Organize your tasks hierarchically with projects, groups, and subtasks
+            <CardDescription className="text-muted-foreground">
+              Your ultimate task management companion
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login">
+            <Tabs defaultValue="login" className="space-y-4">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="register">Register</TabsTrigger>
@@ -54,7 +54,7 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Username</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input placeholder="Enter your username" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -67,14 +67,18 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input type="password" placeholder="Enter your password" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
-                      {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={loginMutation.isPending}>
+                      {loginMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                      )}
                       Login
                     </Button>
                   </form>
@@ -91,7 +95,7 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Username</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input placeholder="Choose a username" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -104,14 +108,18 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input type="password" placeholder="Choose a strong password" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
-                      {registerMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={registerMutation.isPending}>
+                      {registerMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                      )}
                       Register
                     </Button>
                   </form>
@@ -122,16 +130,30 @@ export default function AuthPage() {
         </Card>
       </div>
       <div className="hidden md:flex items-center justify-center bg-primary/5 p-6">
-        <div className="max-w-md space-y-4">
-          <h2 className="text-3xl font-bold">Organize Better</h2>
-          <p className="text-muted-foreground">
-            TodoNest helps you break down complex projects into manageable pieces:
+        <div className="max-w-md space-y-6">
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            Master Your Tasks
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            Quality Sensei helps you organize and track your tasks with precision:
           </p>
-          <ul className="space-y-2 list-disc list-inside text-muted-foreground">
-            <li>Create multiple projects</li>
-            <li>Organize tasks into groups</li>
-            <li>Break down tasks into subtasks</li>
-            <li>Track progress at every level</li>
+          <ul className="space-y-4">
+            <li className="flex items-center gap-2 text-muted-foreground">
+              <CheckCircle className="h-5 w-5 text-primary" />
+              Create hierarchical projects
+            </li>
+            <li className="flex items-center gap-2 text-muted-foreground">
+              <CheckCircle className="h-5 w-5 text-primary" />
+              Organize tasks into logical groups
+            </li>
+            <li className="flex items-center gap-2 text-muted-foreground">
+              <CheckCircle className="h-5 w-5 text-primary" />
+              Break down tasks into manageable subtasks
+            </li>
+            <li className="flex items-center gap-2 text-muted-foreground">
+              <CheckCircle className="h-5 w-5 text-primary" />
+              Track progress at every level
+            </li>
           </ul>
         </div>
       </div>
