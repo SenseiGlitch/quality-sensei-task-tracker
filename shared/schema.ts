@@ -5,6 +5,9 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull(),
   password: text("password").notNull(),
 });
 
@@ -36,7 +39,15 @@ export const subtasks = pgTable("subtasks", {
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
+  firstName: true,
+  lastName: true,
+  email: true,
   password: true,
+}).extend({
+  email: z.string().email("Invalid email address"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 export const insertProjectSchema = createInsertSchema(projects).pick({
